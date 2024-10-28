@@ -1,4 +1,4 @@
-# docker-airflow
+# Apache Airflow Material
 
 This repository contains a **Docker Compose File** of [apache-airflow](https://github.com/apache/incubator-airflow) for [Docker](https://www.docker.com/)'s [automated build](https://hub.docker.com/r/apache/airflow) published to the public [Docker Hub Registry](https://registry.hub.docker.com/).
 
@@ -13,13 +13,27 @@ This repository contains a **Docker Compose File** of [apache-airflow](https://g
 
 Pull the image from the Docker repository.
 
+    ```sh
     docker pull apache/airflow:2.0.0
+    ```
 
 ## Usage
 
 By default, docker-airflow runs Airflow with **LocalExecutor** :
 
+    ```sh
     docker-compose -f docker-compose.yml up -d
+    ```
+
+### Configuration
+
+1. Copy the template configuration file:
+
+    ```sh
+    cp airflow.cfg.template airflow.cfg
+    ```
+
+2. Customize the `airflow.cfg` file with your specific settings, such as database connections, credentials, and other configurations.
 
 NB : If you want to have DAGs example loaded (default=False), you've to set the following environment variable :
 
@@ -29,9 +43,10 @@ in docker-compose.yml
 
 If you want to use Ad hoc query, make sure you've configured connections:
 Go to Admin -> Connections and Edit "postgres_default" set this values (equivalent to values in airflow.cfg/docker-compose*.yml) :
-- Host : postgres
-- Schema : airflow
-- Login : postgres
-- Password : postgres
+
+* Host : postgres
+* Schema : airflow
+* Login : postgres
+* Password : postgres
 
 Enjoy!
