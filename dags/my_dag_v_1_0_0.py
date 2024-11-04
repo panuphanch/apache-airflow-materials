@@ -3,12 +3,19 @@ from airflow.operators.bash import BashOperator
 
 from datetime import datetime, timedelta
 
+default_args = {
+    "email": ["mee@ironsoftware.com"],
+    "email_on_retry": True, # do not send email on retry
+    "email_on_failure": False # send email on failure
+}
+
 # Use version in the DAG ID to not overwrite the historical DAG
 # cacthup=False to not run the historical DAG
 # e.g., current date is 2021-01-05, the historical DAG will run from 2021-01-01 to 2021-01-04
 # if catchup=True, the historical DAG will run from 2021-01-01 to 2021-01-05
 # if catchup=False, the historical DAG will run from 2021-01-05 to 2021-01-05
 with DAG("my_dag_v_1_0_0",
+		 default_args=default_args,
 		 start_date=datetime(2024, 11, 1), # recommended to use datetime object
 		 schedule_interval='@daily',
 		 catchup=False) as dag:
