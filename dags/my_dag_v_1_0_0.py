@@ -35,7 +35,9 @@ with DAG("my_dag_v_1_0_0",
 	
 	task_a = BashOperator(
 		task_id="task_a",
-		bash_command="echo 'task_a!' && sleep 10"
+		bash_command="echo 'task_a!' && sleep 10",
+		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
+									# task_a will run only if task_a in the previous DAG run is completed
 	)
 
 	task_b = BashOperator(
