@@ -55,7 +55,8 @@ with DAG("my_dag_v_1_0_0",
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
 		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
-		pool="process_tasks"
+		pool="process_tasks",
+		priority_weight=2, # set the priority of the task
 	)
 
 	process_b = BashOperator(
@@ -67,7 +68,8 @@ with DAG("my_dag_v_1_0_0",
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
 		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
-		pool="process_tasks"
+		pool="process_tasks",
+		priority_weight=1, # set the priority of the task
 	)
 
 	process_c = BashOperator(
@@ -79,7 +81,8 @@ with DAG("my_dag_v_1_0_0",
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
 		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
-		pool="process_tasks"
+		pool="process_tasks",
+		priority_weight=3, # set the priority of the task
 	)
 
 	store = PythonOperator(
