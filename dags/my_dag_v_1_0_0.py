@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+from airflow.utils.helpers import cross_downstream
 
 from datetime import datetime, timedelta
 
@@ -29,32 +30,63 @@ with DAG("my_dag_v_1_0_0",
 		 default_args=default_args,
 		 start_date=datetime(2024, 11, 1), # recommended to use datetime object
 		 schedule_interval='@daily',
-		 dagrun_timeout=40, 	# timeout for the DAG. best practice to set this value to avoid the infinite loop or dead lock
-								# if not set and exception occurs, the dag will be stuck in max_active_runs_per_dag which is 16 by default
-		 catchup=True) as dag:  # catchup=False to not run the historical DAG
+		 catchup=False) as dag:  # catchup=False to not run the historical DAG
 	
-	task_a = BashOperator(
-		task_id="task_a",
+	extract_a = BashOperator(
+		task_id="extract_a",
+		bash_command="echo 'task_a!' && sleep 10",
+		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
+									# task_a will run only if task_a in the previous DAG run is completed
+	)
+	
+	extract_b = BashOperator(
+		task_id="extract_b",
 		bash_command="echo 'task_a!' && sleep 10",
 		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
 									# task_a will run only if task_a in the previous DAG run is completed
 	)
 
-	task_b = BashOperator(
-		task_id="task_b",
+	process_a = BashOperator(
+		task_id="process_a",
 		email=["meee-airflow@yopmail.com"],
 		email_on_retry=True, # do not send email on retry
 		email_on_failure=True, # do not send email on failure
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo '{{ ti.try_number }}' && exit 0"
+		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
+		pool="process_tasks"
 	)
 
-	task_c = PythonOperator(
-		task_id="task_c",
+	process_b = BashOperator(
+		task_id="process_b",
+		email=["meee-airflow@yopmail.com"],
+		email_on_retry=True, # do not send email on retry
+		email_on_failure=True, # do not send email on failure
+		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
+		retry_exponential_backoff=True, # retry with exponential backoff
+		retry_delay=timedelta(seconds=10), # retry after 10 seconds
+		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
+		pool="process_tasks"
+	)
+
+	process_c = BashOperator(
+		task_id="process_c",
+		email=["meee-airflow@yopmail.com"],
+		email_on_retry=True, # do not send email on retry
+		email_on_failure=True, # do not send email on failure
+		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
+		retry_exponential_backoff=True, # retry with exponential backoff
+		retry_delay=timedelta(seconds=10), # retry after 10 seconds
+		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
+		pool="process_tasks"
+	)
+
+	store = PythonOperator(
+		task_id="store",
 		python_callable=_my_func,
 		depends_on_past=True, # if the previous task is failed, the current task will not run
 	)
 
-	task_a >> task_b >> task_c
+	cross_downstream([extract_a, extract_b], [process_a, process_b, process_c])
+	[process_a, process_b, process_c] >> store
