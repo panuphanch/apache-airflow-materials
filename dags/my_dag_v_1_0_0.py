@@ -54,9 +54,10 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
 		pool="process_tasks",
 		priority_weight=2, # set the priority of the task
+		weight_rule="downstream", # set the priority of the task based on the downstream tasks
 	)
 
 	process_b = BashOperator(
@@ -67,9 +68,10 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
 		pool="process_tasks",
 		priority_weight=1, # set the priority of the task
+		weight_rule="downstream", # set the priority of the task based on the downstream tasks
 	)
 
 	process_c = BashOperator(
@@ -80,9 +82,10 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo '{{ ti.try_number }}' && sleep 20",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
 		pool="process_tasks",
 		priority_weight=3, # set the priority of the task
+		weight_rule="downstream", # set the priority of the task based on the downstream tasks
 	)
 
 	store = PythonOperator(
