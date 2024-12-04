@@ -68,7 +68,7 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && exit 1",
 		pool="process_tasks",
 		priority_weight=1, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
@@ -82,7 +82,7 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && exit 1",
 		pool="process_tasks",
 		priority_weight=3, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
@@ -94,5 +94,26 @@ with DAG("my_dag_v_1_0_0",
 		depends_on_past=True, # if the previous task is failed, the current task will not run
 	)
 
+	clean_a = BashOperator(
+		task_id="clean_a",
+		bash_command="echo 'clean process_a!'",
+		trigger_rule="one_failed"
+	)
+
+	clean_b = BashOperator(
+		task_id="clean_b",
+		bash_command="echo 'clean process_b!'",
+		trigger_rule="one_failed"
+	)
+
+	clean_c = BashOperator(
+		task_id="clean_c",
+		bash_command="echo 'clean process_c!'",
+		trigger_rule="one_failed"
+	)
+
 	cross_downstream([extract_a, extract_b], [process_a, process_b, process_c])
 	[process_a, process_b, process_c] >> store
+	process_a >> clean_a
+	process_b >> clean_b
+	process_c >> clean_c
