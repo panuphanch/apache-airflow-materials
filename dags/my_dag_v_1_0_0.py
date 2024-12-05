@@ -18,8 +18,11 @@ default_args = {
 }
 
 def _my_func(execution_date):
-	if execution_date.day == 5:
-		raise ValueError("Execution date is 5th")
+	if execution_date.day == 10:
+		raise ValueError("Execution date is 10th")
+	
+def _sla_miss(dag, task_list, blocking_task_list, slas, blocking_tis):	
+	print(f"SLAs for dag: {dag} - SLAs: {slas}")
 
 # Use version in the DAG ID to not overwrite the historical DAG
 # cacthup=False to not run the historical DAG
@@ -29,7 +32,8 @@ def _my_func(execution_date):
 with DAG("my_dag_v_1_0_0",
 		 default_args=default_args,
 		 start_date=datetime(2024, 11, 1), # recommended to use datetime object
-		 schedule_interval='@daily',
+		 schedule_interval='*/2 * * * *', # every 2 minutes
+		 sla_miss_callback=_sla_miss, # callback function when the SLA is missed
 		 catchup=False) as dag:  # catchup=False to not run the historical DAG
 	
 	extract_a = BashOperator(
@@ -37,6 +41,7 @@ with DAG("my_dag_v_1_0_0",
 		bash_command="echo 'task_a!' && sleep 10",
 		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
 									# task_a will run only if task_a in the previous DAG run is completed
+		sla=timedelta(seconds=5), 	# Service Level Agreement, if the task is not completed in 15 seconds, the task will be marked as failed
 	)
 	
 	extract_b = BashOperator(
@@ -68,7 +73,7 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && exit 1",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
 		pool="process_tasks",
 		priority_weight=1, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
@@ -82,7 +87,7 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && exit 1",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
 		pool="process_tasks",
 		priority_weight=3, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
