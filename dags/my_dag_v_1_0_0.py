@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.helpers import cross_downstream
+from airflow.exceptions import AirflowTaskTimeout
 
 from datetime import datetime, timedelta
 
@@ -21,6 +22,13 @@ def _my_func(execution_date):
 	if execution_date.day == 5:
 		raise ValueError("Execution date is 5th")
 
+def _on_extract_failure(context):
+	exception = context.get("exception", "No exception")
+	if isinstance(exception, AirflowTaskTimeout):
+		print("The task timed out")
+	else:
+		print("Other error")
+
 # Use version in the DAG ID to not overwrite the historical DAG
 # cacthup=False to not run the historical DAG
 # e.g., current date is 2021-01-05, the historical DAG will run from 2021-01-01 to 2021-01-04
@@ -35,17 +43,19 @@ with DAG("my_dag_v_1_0_0",
 	extract_a = BashOperator(
 		task_id="extract_a",
 		bash_command="echo 'task_a!' && sleep 10",
-		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
-									# task_a will run only if task_a in the previous DAG run is completed
-		execution_timeout=timedelta(seconds=12), 	# set the timeout for the task, the timeout will be 12 seconds
+		wait_for_downstream=True, 					# wait for the downstream tasks to complete before the current task runs
+													# task_a will run only if task_a in the previous DAG run is completed
+		execution_timeout=timedelta(seconds=5), 	# set the timeout for the task, the timeout will be 12 seconds
 													# which time of average time to run task can find in Task Duration in the Airflow UI
+		on_failure_callback=_on_extract_failure
 	)
 	
 	extract_b = BashOperator(
 		task_id="extract_b",
-		bash_command="echo 'task_a!' && sleep 10",
+		bash_command="echo 'task_a!' && sleep 10 && exit 1",
 		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
 									# task_a will run only if task_a in the previous DAG run is completed
+		on_failure_callback=_on_extract_failure
 	)
 
 	process_a = BashOperator(
