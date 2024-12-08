@@ -21,6 +21,12 @@ def _my_func(execution_date):
 	if execution_date.day == 5:
 		raise ValueError("Execution date is 5th")
 
+def _on_extract_a_success(context):
+	print("Extract A is successful with:", context)
+
+def _on_extract_b_failure(context):
+	print("Extract B is failed with:", context)
+
 # Use version in the DAG ID to not overwrite the historical DAG
 # cacthup=False to not run the historical DAG
 # e.g., current date is 2021-01-05, the historical DAG will run from 2021-01-01 to 2021-01-04
@@ -35,17 +41,19 @@ with DAG("my_dag_v_1_0_0",
 	extract_a = BashOperator(
 		task_id="extract_a",
 		bash_command="echo 'task_a!' && sleep 10",
-		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
-									# task_a will run only if task_a in the previous DAG run is completed
+		wait_for_downstream=True, 					# wait for the downstream tasks to complete before the current task runs
+													# task_a will run only if task_a in the previous DAG run is completed
 		execution_timeout=timedelta(seconds=12), 	# set the timeout for the task, the timeout will be 12 seconds
 													# which time of average time to run task can find in Task Duration in the Airflow UI
+		on_success_callback=_on_extract_a_success, 	# callback function after the task is successful
 	)
 	
 	extract_b = BashOperator(
 		task_id="extract_b",
-		bash_command="echo 'task_a!' && sleep 10",
-		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
-									# task_a will run only if task_a in the previous DAG run is completed
+		bash_command="echo 'task_a!' && exit 1",
+		wait_for_downstream=True, 					# wait for the downstream tasks to complete before the current task runs
+													# task_a will run only if task_a in the previous DAG run is completed
+		on_failure_callback=_on_extract_b_failure, 	# callback function after the task is failed
 	)
 
 	process_a = BashOperator(
