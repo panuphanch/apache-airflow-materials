@@ -37,6 +37,8 @@ with DAG("my_dag_v_1_0_0",
 		bash_command="echo 'task_a!' && sleep 10",
 		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
 									# task_a will run only if task_a in the previous DAG run is completed
+		execution_timeout=timedelta(seconds=12), 	# set the timeout for the task, the timeout will be 12 seconds
+													# which time of average time to run task can find in Task Duration in the Airflow UI
 	)
 	
 	extract_b = BashOperator(
@@ -68,7 +70,7 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && exit 1",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
 		pool="process_tasks",
 		priority_weight=1, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
@@ -82,7 +84,7 @@ with DAG("my_dag_v_1_0_0",
 		retries=3, # retry 3 times, default is 0. Set default_task_retries in the airflow.cfg to set the default value
 		retry_exponential_backoff=True, # retry with exponential backoff
 		retry_delay=timedelta(seconds=10), # retry after 10 seconds
-		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && exit 1",
+		bash_command=" echo 'Tries: {{ ti.try_number }} Priority: {{ ti.priority_weight }}' && sleep 20",
 		pool="process_tasks",
 		priority_weight=3, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
