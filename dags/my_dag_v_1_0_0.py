@@ -41,6 +41,7 @@ with DAG("my_dag_v_1_0_0",
 									# task_a will run only if task_a in the previous DAG run is completed
 		execution_timeout=timedelta(seconds=12), 	# set the timeout for the task, the timeout will be 12 seconds
 													# which time of average time to run task can find in Task Duration in the Airflow UI
+		task_concurrency=1, # set the number of tasks to run concurrently
 	)
 	
 	extract_b = BashOperator(
@@ -48,6 +49,7 @@ with DAG("my_dag_v_1_0_0",
 		bash_command="echo 'task_a!' && sleep 10",
 		wait_for_downstream=True, 	# wait for the downstream tasks to complete before the current task runs
 									# task_a will run only if task_a in the previous DAG run is completed
+		task_concurrency=1, # set the number of tasks to run concurrentlyq
 	)
 
 	process_a = BashOperator(
