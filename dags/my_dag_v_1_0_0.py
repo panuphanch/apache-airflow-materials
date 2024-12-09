@@ -17,7 +17,9 @@ default_args = {
 	"email_on_failure": False, # do not send email on failure
 }
 
-def _my_func(execution_date):
+def _my_func(ti, execution_date):
+	xcoms = ti.xcom_pull(task_ids=['process_a', 'process_b', 'process_c'], key='return_value')
+	print(xcoms)
 	if execution_date.day == 5:
 		raise ValueError("Execution date is 5th")
 
@@ -60,6 +62,7 @@ with DAG("my_dag_v_1_0_0",
 		pool="process_tasks",
 		priority_weight=2, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
+		do_xcom_push=True, # do not push the XCom value to the XCom table
 	)
 
 	process_b = BashOperator(
@@ -74,6 +77,7 @@ with DAG("my_dag_v_1_0_0",
 		pool="process_tasks",
 		priority_weight=1, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
+		do_xcom_push=True,
 	)
 
 	process_c = BashOperator(
@@ -88,6 +92,7 @@ with DAG("my_dag_v_1_0_0",
 		pool="process_tasks",
 		priority_weight=3, # set the priority of the task
 		weight_rule="downstream", # set the priority of the task based on the downstream tasks
+		do_xcom_push=True,
 	)
 
 	store = PythonOperator(
