@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
-from airflow.utils.helpers import cross_downstream
+from airflow.utils.helpers import cross_downstream, chain
 
 from datetime import datetime, timedelta
 
@@ -122,7 +122,5 @@ with DAG("my_dag_v_1_0_0",
 	)
 
 	cross_downstream([extract_a, extract_b], [process_a, process_b, process_c])
-	[process_a, process_b, process_c] >> store
-	process_a >> clean_a
-	process_b >> clean_b
-	process_c >> clean_c
+	cross_downstream([process_a, process_b, process_c], store)
+	chain([process_a, process_b, process_c], [clean_a, clean_b, clean_c])
